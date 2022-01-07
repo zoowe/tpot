@@ -87,6 +87,7 @@ TOPTELECTSTEP = 0.05     # amount of electron add or subtract (TPOTMETHOD = 2 )
 ```
 
 There are currently two methods for updating ```NELECT```. 
+
 :one: Electronic step
 
 ```TPOTMETHOD    = 1```
