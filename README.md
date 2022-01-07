@@ -1,8 +1,10 @@
 # tpot
 
 # Instruction
+The following is instruction for CPU code. The precedure is the same for GPU (i.e. files ended with _gpu.F)
 
-:one: Admend electrond.F
+
+:one: Admend electron.F
 
 Add the following to electron.F, the code between ```Begin``` and ```End``` ```target potential```
 
@@ -43,7 +45,25 @@ Add the following to electron.F, the code between ```Begin``` and ```End``` ```t
         pot.o \
 ```
 
-:three: Copy main source code
+:three: Update VASPSol
+There is a small modification to ```VASPSol/src/solvation.F```. 
+Download from: https://github.com/zoowe/VASPsol/tree/tpot/src 
+Or modify your current ```solvation.F```, at the begining of ```MODULE POT_K```
+```
+ LOGICAL, SAVE :: LDEFAULTPCM = .FALSE.
+ LOGICAL, SAVE :: LJDFTX = .FALSE.
+!------ Begin Target Potential
+ REAL(q), PUBLIC, SAVE :: VACPOT_PSP, VACPOT
+!------ End Target Potential
+ CONTAINS
+```
+and in ```SUBROUTINE GET_FERMISHIFT```
+```
+  COMPLEX(q), ALLOCATABLE::  CWORK(:), CWORK_V(:), CVHAR(:), CV(:) 
+!  REAL(q) :: VACPOT_PSP, VACPOT
+  INTEGER :: NODE_ME, IONODE
+```
+:four: Copy main source code
 Copy ```src/targetpot.F``` to vasp ```src``` folder
 
 :four: Recompile your vasp code
