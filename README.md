@@ -1,6 +1,7 @@
 # tpot
 
-# Instruction
+# Getting the code
+
 The following is instruction for CPU code. The precedure is the same for GPU (i.e. files ended with _gpu.F)
 
 
@@ -46,8 +47,11 @@ Add the following to electron.F, the code between ```Begin``` and ```End``` ```t
 ```
 
 :three: Update VASPSol
+
 There is a small modification to ```VASPSol/src/solvation.F```. 
+
 Download from: https://github.com/zoowe/VASPsol/tree/tpot/src 
+
 Or modify your current ```solvation.F```, at the begining of ```MODULE POT_K```
 ```
  LOGICAL, SAVE :: LDEFAULTPCM = .FALSE.
@@ -67,6 +71,35 @@ and in ```SUBROUTINE GET_FERMISHIFT```
 Copy ```src/targetpot.F``` to vasp ```src``` folder
 
 :four: Recompile your vasp code
+
+# Running the code
+
+The following are available keyword to add in ```INCAR```
+```
+LTPOT         = .FALSE.  # Turn on/off TPOT
+TPOTMETHOD    = 1        # 1 electronics, 2 ionic
+TPOTVTARGET   = 3.44     # Target potential
+TPOTVDIFF     = 0.25     # Acceptable range for potential
+TPOTVRATE     = 2        # Rate of changing NELECT, electron/V
+TOPTVEDIFF    = 0.0001   # Energy threshold of electronic iteration to start updating NELECT
+TPOTDYNVRATE  = .TRUE.   # VRATE can be fixed or changed
+TOPTELECTSTEP = 0.05     # amount of electron add or subtract (TPOTMETHOD = 2 )
+```
+
+There are currently two methods for updating ```NELECT```. 
+:one: Electronic step
+
+```TPOTMETHOD    = 1```
+
+Number of electrons is updated at every electronic step to reach target potential. ```TPOTVDIFF```, ```TPOTVRATE```, ```TOPTVEDIFF```, ```TPOTDYNVRATE``` are the keywords to control the updating procedure. This method could be expensive.
+
+:two: Ionic step
+
+```TPOTMETHOD    = 2```
+
+Number of electrons is updated at the end of each ionic step if current potential is not close to the target potential. ```TOPTELECTSTEP``` is the only keyword to 
+ control the updating procedure.
+
 
 
 
