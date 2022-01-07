@@ -102,5 +102,5 @@ Number of electrons is updated at the end of each ionic step if current potentia
  control the updating procedure.
 
 
-
+In both methods, start calculation with a reasonable ```NELECT``` for your target potential (Use ```ISTART = 1```). It can be estimated by doing a series of SCF calculations with different ```NELECT```. 
 
