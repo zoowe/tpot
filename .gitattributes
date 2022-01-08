@@ -1,2 +1,1 @@
-* linguist-vendored
-*.F linguist-language=Fortran
+*.* linguist-language=Fortran
