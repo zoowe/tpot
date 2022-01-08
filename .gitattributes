@@ -1,2 +1,2 @@
 * linguist-vendored
-*.F linguist-vendored=false
+*.F linguist-language=Fortran
