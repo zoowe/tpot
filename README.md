@@ -123,9 +123,9 @@ This keywork turns on and off target potential routine.
 
 INTEGER, DEFAULT: 2
 
-1: Updating NELECT for each SCF cycle.
- 
-2. Updating NELECT for each ionic iteration.
+1: Updating ```NELECT``` for each SCF cycle.
+
+2. Updating ```NELECT``` for each ionic iteration.
 
 ### TPOTVTARGET
 
