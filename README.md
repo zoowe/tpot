@@ -183,4 +183,68 @@ REAL, DEFAULT: 1.d-4 electron
 
 To avoid divergence, if the difference in ```NELECT``` between two consecutive steps is smaller than ```TPOTDNELECTLIM```, ```TPOTVRATE``` is not updated.
 
+## Examples
 
+### Charging electrode to reach a target potential
+
+One can do a self consistent (SCF) cycle with updating ```NELECT``` to reach the target potential. The following keywords are needed to charge electrode to a potential of 3.44 V (i.e. -1 V vs. SHE) within 0.01 V accuracy.
+
+```
+#VASPSol keywords are omitted.
+IBRION = -1
+NSW    = 1
+NELM   = 200    # Yes, it may need a lot of iterations
+
+LTPOT = .TRUE.
+TPOTMETHOD      = 1
+TPOTVTARGET     = 3.44
+TPOTVDIFF       = 0.01
+TPOTVRATE       = -1.
+TPOTVRATELIM    = 0.2
+TPOTVRATEDAMP   = 2
+TPOTVEDIFF      = 0.0001
+TPOTDYNVRATE    = .TRUE.
+TPOTELECTSTEP   = 0.05    
+```
+
+Or, one can do the following
+```
+#VASPSol keywords are omitted.
+EDIFFG = 1.d-4
+IBRION = -1
+NSW    = 20
+NELM   = 60 
+
+LTPOT = .TRUE.
+TPOTMETHOD      = 2
+TPOTVTARGET     = 3.44
+TPOTVDIFF       = 0.01
+TPOTVRATE       = -1.
+TPOTVRATELIM    = 0.2
+TPOTVRATEDAMP   = 1        # Can be done agreesively 
+TPOTVEDIFF      = 0.0001
+TPOTDYNVRATE    = .TRUE.
+TPOTELECTSTEP   = 0.10
+```
+
+### Molecular dynamics at a target potential
+
+It is important to start with a reasonable ```NELECT```. Use the above exmaple to find ```NELECT``` for a given target potential before doing molecular dynamics.
+
+```
+#VASPSol keywords are omitted.
+IBRION =   0
+NSW    =   2000  
+#Other molecular dynamicss keywords are omiited
+
+LTPOT = .TRUE.
+TPOTMETHOD      = 2        # Avoid 1 for MD
+TPOTVTARGET     = 3.44
+TPOTVDIFF       = 0.01
+TPOTVRATE       = -1.
+TPOTVRATELIM    = 0.2
+TPOTVRATEDAMP   = 1        
+TPOTVEDIFF      = 0.0001
+TPOTDYNVRATE    = .TRUE.
+TPOTELECTSTEP   = 0.05     # Keep changing in ```NELECT``` is small.
+```
