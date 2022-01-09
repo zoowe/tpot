@@ -233,7 +233,7 @@ TPOTELECTSTEP   = 0.10
 
 ### Molecular dynamics at a target potential
 
-It is important to start with a reasonable ```NELECT```. Use the above exmaple to find ```NELECT``` for a given target potential before doing molecular dynamics.
+It is important to start with a reasonable ```NELECT```. Use the above example to find ```NELECT``` for a given target potential before doing molecular dynamics.
 
 ```
 #VASPSol keywords are omitted.
