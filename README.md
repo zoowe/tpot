@@ -108,7 +108,7 @@ Number of electrons is updated at the end of each ionic step if current potentia
 
 In both methods, it is benificial to start calculation with a reasonable ```NELECT``` for your target potential (Use ```ISTART = 1```). It can be estimated by doing a series of SCF calculations with different ```NELECT```. 
 
-## Details of each keyword
+# Details of each keyword
 
 ### LPOT
 
@@ -183,7 +183,7 @@ REAL, DEFAULT: 1.d-4 electron
 
 To avoid divergence, if the difference in ```NELECT``` between two consecutive steps is smaller than ```TPOTDNELECTLIM```, ```TPOTVRATE``` is not updated.
 
-## Examples
+# Examples
 
 ### Charging electrode to reach a target potential
 
