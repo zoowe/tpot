@@ -68,6 +68,7 @@ and in ```SUBROUTINE GET_FERMISHIFT```
   INTEGER :: NODE_ME, IONODE
 ```
 :four: Copy main source code
+
 Copy ```src/targetpot.F``` to vasp ```src``` folder
 
 :four: Recompile your vasp code
@@ -120,7 +121,8 @@ This keywork turns on and off target potential routine.
 
 INTEGER, DEFAULT: 2
 
-1: Updating NELECT for each SCF cycle. 
+1: Updating NELECT for each SCF cycle.
+ 
 2. Updating NELECT for each ionic iteration.
 
 ### TPOTVTARGET
@@ -173,7 +175,7 @@ Increasement for updating ```NELECT``` when ```TPOTDYNVRATE = .FALSE.```. When `
 
 ### TDFERMI_SHIFTLIM
 
-REAL, DEFAULT: 0.5
+REAL, DEFAULT: 0.5 eV
 
 Sometime, VASPSol could not calculate FERMI_SHIFT (reported at 0.0 or any non-reasonable number). If FERMI_SHIFT differs with the value calculated in previous step by ```TDFERMI_SHIFTLIM```, ```TPOT``` will use the previous value.
 
