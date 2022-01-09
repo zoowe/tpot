@@ -175,11 +175,11 @@ REAL, DEFAULT: 0.01 electrons
 
 Increasement for updating ```NELECT``` when ```TPOTDYNVRATE = .FALSE.```. When ```TPOTDYNVRATE = .TRUE.```, this is the maximum amount of electron changed at every updating step.
 
-### TDFERMI_SHIFTLIM
+### TPOTDFERMI_SHIFTLIM
 
 REAL, DEFAULT: 0.5 eV
 
-Sometime, VASPSol could not calculate FERMI_SHIFT (reported at 0.0 or any non-reasonable number). If FERMI_SHIFT differs with the value calculated in previous step by ```TDFERMI_SHIFTLIM```, ```TPOT``` will use the previous value.
+Sometime, VASPSol could not calculate FERMI_SHIFT (reported at 0.0 or any non-reasonable number). If FERMI_SHIFT differs with the value calculated in previous step by ```TPOTDFERMI_SHIFTLIM```, ```TPOT``` will use the previous value.
 
 ### TPOTDNELECTLIM
 
