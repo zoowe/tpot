@@ -246,5 +246,5 @@ TPOTVRATELIM    = 0.2
 TPOTVRATEDAMP   = 1        
 TPOTVEDIFF      = 0.0001
 TPOTDYNVRATE    = .TRUE.
-TPOTELECTSTEP   = 0.05     # Keep changing in ```NELECT``` is small.
+TPOTELECTSTEP   = 0.05     # Keep changing in number of electron small for stable dynamics.
 ```
