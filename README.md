@@ -76,14 +76,19 @@ Copy ```src/targetpot.F``` to vasp ```src``` folder
 
 The following are available keyword to add in ```INCAR```
 ```
-LTPOT         = .FALSE.  # Turn on/off TPOT
-TPOTMETHOD    = 1        # 1 electronics, 2 ionic
-TPOTVTARGET   = 3.44     # Target potential
-TPOTVDIFF     = 0.25     # Acceptable range for potential
-TPOTVRATE     = 2        # Rate of changing NELECT, electron/V
-TOPTVEDIFF    = 0.0001   # Energy threshold of electronic iteration to start updating NELECT
-TPOTDYNVRATE  = .TRUE.   # VRATE can be fixed or changed
-TOPTELECTSTEP = 0.05     # amount of electron add or subtract (TPOTMETHOD = 2 )
+LTPOT               = .FALSE.  # Turn on/off TPOT
+TPOTMETHOD          = 1        # 1 electronics, 2 ionic
+TPOTVTARGET         = 3.44     # Target potential
+TPOTVDIFF           = 0.01     # Rotential Threshold
+TPOTVRATE           = -1.0     # Initial Rate of changing NELECT, V/electron
+TPOTVRATELIM        = 0.2      # Limit for |TPOTVRATE|, V/electron
+TPOTVRATEDAMP       = 1.0      # Damping factor for |TPOTVRATE|
+TPOTVEDIFF          = 1.d-4    # Energy threshold of electronic iteration to start updating NELECT
+TPOTDYNVRATE        = .TRUE.   # Updating NELECT with VRATE
+TPOTELECTSTEP       = 0.01     # (Maximum) Amount of electrons changed.
+TPOTDFERMI_SHIFTLIM = 0.5      # Limit for change in FERMI_SHIFT
+TPOTDNELECTLIM      = 1.d-4    # Limit for amount of electron changed for updating VRATE.
+
 ```
 
 There are currently two methods for updating ```NELECT```. 
@@ -92,15 +97,90 @@ There are currently two methods for updating ```NELECT```.
 
 ```TPOTMETHOD    = 1```
 
-Number of electrons is updated at every electronic step to reach target potential. ```TPOTVDIFF```, ```TPOTVRATE```, ```TOPTVEDIFF```, ```TPOTDYNVRATE``` are the keywords to control the updating procedure. This method could be expensive.
+Number of electrons is updated at every electronic step to reach target potential. This method could be expensive.
 
 :two: Ionic step
 
 ```TPOTMETHOD    = 2```
 
-Number of electrons is updated at the end of each ionic step if current potential is not close to the target potential. ```TOPTELECTSTEP``` is the only keyword to 
- control the updating procedure.
+Number of electrons is updated at the end of each ionic step if current potential is not close to the target potential. 
 
 
 In both methods, it is benificial to start calculation with a reasonable ```NELECT``` for your target potential (Use ```ISTART = 1```). It can be estimated by doing a series of SCF calculations with different ```NELECT```. 
+
+## Details of each keyword
+
+### LPOT
+
+LOGICAL, DEFAULT: .FALSE.
+
+This keywork turns on and off target potential routine.
+
+### TPOTMETHOD
+
+INTEGER, DEFAULT: 2
+
+1: Updating NELECT for each SCF cycle. 
+2. Updating NELECT for each ionic iteration.
+
+### TPOTVTARGET
+
+REAL, DEFAULT: 3.44 (V)
+
+This keywork defines the desire target potential. Note that, it is the potential of electrode with respect to vacuum level. 
+
+### TPOTVDIFF
+
+REAL, DEFAULT: 0.01
+
+This keywork defines a threshold for optimized potential, i.e. current potential will be converged within ```TPOTVDIFF``` V from the target potential ```TPOTVTARGET```.
+
+### TPOTVRATE
+
+REAL, DEFAULT: -1.0 (V/electron)
+
+This keywork controls the initial rate for changing ```NELECT``` to reach target potential. It will be updated after each iteration.
+
+### TPOTVRATELIM
+
+REAL, DEFAULT: 0.2 (V/electron)  
+
+It defines the lower limit of ```TPOTVRATE```, i.e. if ```|TPOTVRATE| < TPOTVRATELIM, TPOTVRATE = TPOTVRATE/|TPOTVRATE| * TPOTVRATELIM```
+
+### TPOTVRATEDAMP
+
+REAL, DEFAULT: 1.0
+
+Damping factor for TPOTVRATE. It changes how agressive ```NELECT``` to be updated, i.e. ```TPOTVRATE = TPOTVRATE * TPOTVRATEDAMP```
+
+### TPOTVEDIFF
+
+REAL, DEFAULT: 1.d-4 eV
+
+For ```TPOTMETHOD = 1```, ```NELECT``` is updated only if energy converge to ```TPOTVEDIFF```. It should be set to a value smaller than ```EDIFF```.
+
+### TPOTDYNVRATE
+
+LOGICAL, DEFAULT: TRUE
+
+It controls how ```NELECT``` is updated. If it is ```.TRUE.```, ```NELECT``` is update with ```TPOTVRATE```, otherwise, it is updated by an increasment ```TPOTELECTSTEP```.
+
+### TPOTELECTSTEP
+
+REAL, DEFAULT: 0.01 electrons
+
+Increasement for updating ```NELECT``` when ```TPOTDYNVRATE = .FALSE.```. When ```TPOTDYNVRATE = .TRUE.```, this is the maximum amount of electron changed at every updating step.
+
+### TDFERMI_SHIFTLIM
+
+REAL, DEFAULT: 0.5
+
+Sometime, VASPSol could not calculate FERMI_SHIFT (reported at 0.0 or any non-reasonable number). If FERMI_SHIFT differs with the value calculated in previous step by ```TDFERMI_SHIFTLIM```, ```TPOT``` will use the previous value.
+
+### TPOTDNELECTLIM
+
+REAL, DEFAULT: 1.d-4 electron
+
+To avoid divergence, if the difference in ```NELECT``` between two consecutive steps is smaller than ```TPOTDNELECTLIM```, ```TPOTVRATE``` is not updated.
+
 
