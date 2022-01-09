@@ -1,6 +1,6 @@
 # tpot
 
-```tpot``` is a ```Frortran``` code that if it is added to the [VASP code](https://www.vasp.at/) allows to perform Grand Canonical ensemble simulations with Density Functional theory by controlling number of electrons in the system (slab) so that its work function reaches a target value. It is helpful for target potential electrode simulation. It requires [VASPSol](https://github.com/zoowe/VASPsol/tree/tpot/src).
+```tpot``` is a ```Fortran``` code that if it is added to the [VASP code](https://www.vasp.at/) allows to perform Grand Canonical ensemble simulations with Density Functional theory by controlling number of electrons in the system (slab) so that its work function reaches a target value. It is helpful for target potential electrode simulation. It requires [VASPSol](https://github.com/zoowe/VASPsol/tree/tpot/src).
 
 # Getting the code
 
