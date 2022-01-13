@@ -105,6 +105,12 @@ MODULE targetpot
           TPOT%V0      = 10000
       ENDIF
 
+      IF ( TPOT%LTPOT .AND. LSOL == .FALSE. ) THEN
+          IF (IO%IU6>=0) WRITE( IO%IU6, 9004 ) 
+          TPOT%LTPOT = .FALSE.
+      ENDIF
+      IF ( TPOT%LTPOT == .FALSE. ) GOTO 9005
+
       FERMI_SHIFT  = VACPOT
       ! Regulate FERMI_SHIFT: VASPSol sometime report ths number wrong.
       IF ( TPOT%ITER > 0 ) THEN
@@ -129,7 +135,7 @@ MODULE targetpot
       ENDIF 
     
       IF ( TPOT%METHOD == 1 ) THEN
-          METHOD = ' Electronic Steps'
+          METHOD = 'Electronic Steps'
           IF ( ABS( V - TPOT%VTARGET ) > TPOT%VDIFF ) INFO%LABORT = .FALSE.
           IF(ABS(DESUM_)<TPOT%VEDIFF.OR.ABS(DESUM1_)<TPOT%VEDIFF) THEN
               IF ( ABS( V - TPOT%VTARGET ) > TPOT%VDIFF ) THEN
@@ -158,7 +164,7 @@ MODULE targetpot
           INFO%NELECT = NELECT
 
       ELSEIF ( TPOT%METHOD == 2 ) THEN
-          METHOD = ' Ionic Steps'
+          METHOD = 'Ionic Steps'
           IF ( INFO%LABORT .AND. ABS( V - TPOT%VTARGET ) > TPOT%VDIFF ) THEN
               ! Updated with dynamic rate
               IF ( TPOT%DYNVRATE ) THEN
@@ -184,7 +190,10 @@ MODULE targetpot
           ENDIF
           INFO%NELECT = NELECT
 
-      ENDIF 
+      ELSE
+          METHOD = 'NOT SUPORTED'
+          IF (IO%IU6>=0) WRITE( IO%IU6, 9003 ) TPOT%METHOD
+      ENDIF
 
 9001 FORMAT('     TPOT: FERMI_SHIFT IS VERY DIFFERENT FROM THE LAST ITERATION'/&
            &'     ', F10.5,' vs ', F10.5,' eV'/&
@@ -209,6 +218,11 @@ MODULE targetpot
 !            &'    V0                  =', F16.5, ' V'/   &
 !            &'    NELECT0             =', F16.5, ' electrons'/   &
             &'    =====================================') 
+
+9003 FORMAT('     TPOT: METHOD = ',I5,' IS NOT SUPPORTED' )
+9004 FORMAT('     TPOT: LSOL = .FALSE. IS NOT SUPPORTED' )
+
+9005  CONTINUE
 
  END SUBROUTINE
 END MODULE 
