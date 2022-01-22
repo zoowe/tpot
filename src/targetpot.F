@@ -105,11 +105,16 @@ MODULE targetpot
           TPOT%V0      = 10000
       ENDIF
 
-      IF ( TPOT%LTPOT .AND. LSOL == .FALSE. ) THEN
-          IF (IO%IU6>=0) WRITE( IO%IU6, 9004 ) 
+      IF ( LSOL == .FALSE. ) THEN
+          IF (IO%IU6>=0) WRITE( IO%IU6, 9004 )
           TPOT%LTPOT = .FALSE.
+          GOTO 9006 
       ENDIF
-      IF ( TPOT%LTPOT == .FALSE. ) GOTO 9005
+
+      IF ( LSOL .AND. TPOT%LTPOT == .FALSE. .AND. TPOT%ITER == 0 ) THEN
+          TPOT%METHOD = 3
+          IF (IO%IU6>=0) WRITE( IO%IU6, 9005 ) LSOL, TPOT%LTPOT, TPOT%METHOD
+      ENDIF
 
       FERMI_SHIFT  = VACPOT
       ! Regulate FERMI_SHIFT: VASPSol sometime report ths number wrong.
@@ -193,6 +198,16 @@ MODULE targetpot
       ELSE
           METHOD = 'NOT SUPORTED'
           IF (IO%IU6>=0) WRITE( IO%IU6, 9003 ) TPOT%METHOD
+          NELECT = INFO%NELECT
+          TPOT%V0  = V
+          TPOT%NELECT0 = INFO%NELECT
+          TPOT%ITER    = TPOT%ITER + 1
+
+          IF ( INFO%LABORT ) THEN
+              IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, EFERMI, INFO%NELECT, V, TPOT%VTARGET, TPOT%METHOD, METHOD, &
+                                                  &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
+                                                  &NELECT !, TPOT%V0, TPOT%NELECT0
+          ENDIF
       ENDIF
 
 9001 FORMAT('     TPOT: FERMI_SHIFT IS VERY DIFFERENT FROM THE LAST ITERATION'/&
@@ -221,8 +236,9 @@ MODULE targetpot
 
 9003 FORMAT('     TPOT: METHOD = ',I5,' IS NOT SUPPORTED' )
 9004 FORMAT('     TPOT: LSOL = .FALSE. IS NOT SUPPORTED' )
+9005 FORMAT('     TPOT: LSOL = ',L1,' LTPOT = ',L1,' SETTING METHOD = ',I3 )
 
-9005  CONTINUE
+9006  CONTINUE
 
  END SUBROUTINE
 END MODULE 
