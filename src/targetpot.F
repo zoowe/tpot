@@ -9,7 +9,7 @@ MODULE targetpot
  LOGICAL :: READY           = .FALSE.  ! IF INCAR IS READ
  INTEGER :: METHOD          = 1        ! 1 electronics, 2 ionic
  REAL(q) :: VDIFF           = 0.01     ! Rotential Threshold
- REAL(q) :: VTARGET         = 3.44     ! Target potential
+ REAL(q) :: VTARGET         = 4.44     ! Target potential, -chemical potential
  REAL(q) :: VRATE           = -1.0     ! Initial Rate of changing NELECT, electron/V
  REAL(q) :: VRATELIM        = 0.2      ! Limit for |TPOTVRATE|, electron/V
  REAL(q) :: VRATEDAMP       = 1.0      ! Damping factor for |TPOTVRATE|
@@ -119,7 +119,7 @@ MODULE targetpot
       FERMI_SHIFT  = VACPOT
       ! Regulate FERMI_SHIFT: VASPSol sometime report ths number wrong.
       IF ( TPOT%ITER > 0 ) THEN
-          IF ( abs( FERMI_SHIFT - TPOT%FERMI_SHIFT) > TPOT%DFERMI_SHIFTLIM ) THEN
+          IF ( abs( FERMI_SHIFT - TPOT%FERMI_SHIFT) > TPOT%DFERMI_SHIFTLIM .AND. abs( FERMI_SHIFT ) < 1.d-4 ) THEN
               IF (IO%IU6>=0) WRITE( IO%IU6, 9001 ) FERMI_SHIFT, TPOT%FERMI_SHIFT, TPOT%FERMI_SHIFT
               FERMI_SHIFT = TPOT%FERMI_SHIFT
           ENDIF
@@ -219,7 +219,7 @@ MODULE targetpot
             &'    FERMI_SHIFT         =', F16.12,' eV'/ &
             &'    EFERMI              =', F16.12,' eV'/ &
             &'    CURRENT NELECT      =', F16.5, ' electrons'/    &
-            &'    CURRENT POTENTIAL   =', F16.12,' V'/  &
+            &'    CURRENT POTENTIAL   =', F16.12,' V [= -(EFERMI + FERMI_SHIFT)] '/  &
             &'    TARGET POT. VTARGET =', F16.12,' V'/  &
             &'    TARGET POT. METHOD  =', I16,' ',A20,''/  &
             &'    ENERGY THRES.VEDIFF =', F16.12,' eV'/  &
