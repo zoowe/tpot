@@ -3,6 +3,9 @@ MODULE targetpot
  USE prec
  USE solvation
  USE pot_k
+ USE base
+ USE lattice
+ USE poscar
 
  TYPE info_tpot
  LOGICAL :: LTPOT           = .FALSE.  ! Target potential on/off
@@ -24,8 +27,19 @@ MODULE targetpot
  INTEGER :: ITER            = 0        ! Iteration
  END TYPE
 
+ TYPE info_penalty
+ LOGICAL :: LPENPOT         = .FALSE.  ! Penalty potential is applied or not, 
+                                       ! softplus = h * log( 1 + exp( ( z - zo ) / w ) )
+ REAL(q) :: H               = 1.       ! Potential high
+ REAL(q) :: W               = 1.       ! Potential width
+ REAL(q) :: Z0              = 0.5      ! Z position (crystal coor) of the separation between explicit and implicit region.
+ REAL(q) :: ZMIN            = 0.4      ! MIN Z position (crystal coor) to apply PENPOT
+
+ END TYPE
+
  TYPE (info_tpot ) :: TPOT
- PUBLIC :: UPDATE_NELECT, TPOT
+ TYPE (info_penalty) :: PENPOT
+ PUBLIC :: UPDATE_NELECT, TPOT, PENPOT
  
  CONTAINS
 
@@ -98,8 +112,29 @@ MODULE targetpot
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTDNELECTLIM','=','#',';','F',&
                 IDUM,TPOT%DNELECTLIM,CDUM,LDUM,CHARAC,N,1,IERR)
                IF ((IERR/=0).OR.(N<1)) TPOT%DNELECTLIM = 1.d-4
-
           ENDIF
+
+          ! Read information for penalty potential
+          CALL RDATAB(LOPEN,'INCAR',IO%IU5,'LPENPOT','=','#',';','L', &
+              IDUM,RDUM,CDUM,PENPOT%LPENPOT,CHARAC,N,1,IERR)
+          IF ((IERR/=0).OR.(N<1)) PENPOT%LPENPOT = .FALSE.
+
+          CALL RDATAB(LOPEN,'INCAR',IO%IU5,'PENPOT_H','=','#',';','F',&
+           IDUM,PENPOT%H,CDUM,LDUM,CHARAC,N,1,IERR)
+          IF ((IERR/=0).OR.(N<1)) PENPOT%H = 1.
+
+          CALL RDATAB(LOPEN,'INCAR',IO%IU5,'PENPOT_W','=','#',';','F',&
+           IDUM,PENPOT%W,CDUM,LDUM,CHARAC,N,1,IERR)
+          IF ((IERR/=0).OR.(N<1)) PENPOT%W = 1.
+
+          CALL RDATAB(LOPEN,'INCAR',IO%IU5,'PENPOT_Z0','=','#',';','F',&
+           IDUM,PENPOT%Z0,CDUM,LDUM,CHARAC,N,1,IERR)
+          IF ((IERR/=0).OR.(N<1)) PENPOT%Z0 = 0.5 
+
+          CALL RDATAB(LOPEN,'INCAR',IO%IU5,'PENPOT_ZMIN','=','#',';','F',&
+           IDUM,PENPOT%ZMIN,CDUM,LDUM,CHARAC,N,1,IERR)
+          IF ((IERR/=0).OR.(N<1)) PENPOT%ZMIN = PENPOT%Z0 - 0.1
+
           TPOT%READY   = .TRUE.
           TPOT%NELECT0 = INFO%NELECT
           TPOT%V0      = 10000
@@ -241,4 +276,51 @@ MODULE targetpot
 9006  CONTINUE
 
  END SUBROUTINE
+
+ SUBROUTINE APPLY_PENPOT( IO, DYN, LATT_CUR, T_INFO, TIFOR )
+     TYPE (in_struct)       :: IO
+     TYPE(type_info)        :: T_INFO
+     TYPE(dynamics)         :: DYN
+     TYPE(latt)             :: LATT_CUR
+     REAL(q), INTENT(INOUT) :: TIFOR(3,T_INFO%NIONS)
+     INTEGER                :: I, J, K
+     REAL(q)                :: EPENALTY, FPENALTY, DZ, DZW
+     REAL(q), PARAMETER     :: log10e = 0.4342944819032518
+
+     IF (IO%IU6>=0) WRITE(IO%IU6,9007)PENPOT%LPENPOT, PENPOT%H, PENPOT%W, PENPOT%Z0, PENPOT%ZMIN
+     IF ( .NOT. PENPOT%LPENPOT ) THEN
+         IF (IO%IU6>=0) WRITE(IO%IU6,9008)
+         GOTO 9011
+     ENDIF
+
+     EPENALTY = 0.
+     DO I=1,T_INFO%NIONS
+         IF ( DYN%POSION(3,I) > PENPOT%ZMIN ) THEN
+             DZ = DYN%POSION(3,I) - PENPOT%Z0
+             DZW = DZ/PENPOT%W
+             FPENALTY = -PENPOT%H*log10e/(PENPOT%W*(1+EXP(DZW)))*EXP(DZW)
+             EPENALTY = EPENALTY + PENPOT%H * LOG10(1+EXP(DZW))
+             TIFOR(3,I) = TIFOR(3,I) + FPENALTY
+             IF (IO%IU6>=0) WRITE(IO%IU6,9009)I, FPENALTY
+         END IF
+     ENDDO
+     IF (IO%IU6>=0) WRITE(IO%IU6,9010)EPENALTY
+
+9007 FORMAT( '    ====================================='/ &
+            &'    PENALTY POTENTIAL ROUTINE'/ &
+            &'    LPENPOT             =', L16,''/ &
+            &'    PENPOT_H            =', F16.12,' eV'/ &
+            &'    PENPOT_W            =', F16.12,' Crystal Coordinate'/ &
+            &'    PENPOT_Z0           =', F16.12,' Crystal Coordinate, Separation between IMPLICIT and EXPLICIT'/ &
+            &'    PENPOT_ZMIN         =', F16.12,' Crystal Coordinate, Starting point for applying penalty potential'/ &
+            &'    =====================================')
+
+9008 FORMAT('     TPOT: NO PENALTY POTENTIAL' )
+9009 FORMAT('     TPOT: PENALTY FORCE TO ATOM ',I5,':',F16.12,' eV/Angstrom (Included in total force)')
+9010 FORMAT('     TPOT: PENALTY ENERGY = ',F16.12,' eV (Not yet included in TOTEN)')
+    
+9011 CONTINUE
+
+ END SUBROUTINE
+
 END MODULE 
