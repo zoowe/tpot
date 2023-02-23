@@ -29,6 +29,7 @@ MODULE targetpot
  REAL(q) :: DFERMI_SHIFTLIM = 0.5      ! Limit for change in FERMI_SHIFT
  REAL(q) :: DNELECTLIM      = 1.d-4    ! Limit for amount of electron changed for updating VRATE
  LOGICAL :: GCENERGY        = .TRUE.   ! GC correction -(NELECT - ZVALS)*EFERMI  included in TOTEN
+ LOGICAL :: GCIONIC         = .TRUE.   ! GC correction to the end of each ionic step IBRION = 0
  REAL(q) :: ZVALS           = 0.0      ! Total number of valence electron for neutral case
  INTEGER :: ITER            = 0        ! Iteration
  END TYPE
@@ -129,6 +130,10 @@ MODULE targetpot
                 IDUM,RDUM,CDUM,TPOT%GCENERGY,CHARAC,N,1,IERR)
                IF ((IERR/=0).OR.(N<1)) TPOT%GCENERGY = .TRUE.
 
+               CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTGCIONIC','=','#',';','L', &
+                IDUM,RDUM,CDUM,TPOT%GCIONIC,CHARAC,N,1,IERR)
+               IF ((IERR/=0).OR.(N<1)) TPOT%GCIONIC = .TRUE.
+               
           ENDIF
 
           ! Read information for penalty potential
@@ -234,7 +239,7 @@ MODULE targetpot
           ENDIF
           IF (IO%IU6>=0) WRITE( IO%IU6, 9002 )  FERMI_SHIFT, EFERMI, INFO%NELECT, V, TPOT%VTARGET, TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
-                                                  &NELECT, TPOT%GCENERGY !, TPOT%V0, TPOT%NELECT0
+                                                  &NELECT, TPOT%GCENERGY, TPOT%GCIONIC !, TPOT%V0, TPOT%NELECT0
 
           INFO%NELECT = NELECT
 
@@ -262,7 +267,7 @@ MODULE targetpot
               IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, VACLEVEL, EFERMI, INFO%NELECT, TPOT%TRUEVACLEVEL, V, VFORMULA, TPOT%VTARGET,&
                                                   &TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
-                                                  &NELECT, TPOT%GCENERGY !, TPOT%V0, TPOT%NELECT0
+                                                  &NELECT, TPOT%GCENERGY, TPOT%GCIONIC !, TPOT%V0, TPOT%NELECT0
           ENDIF
           INFO%NELECT = NELECT
 
@@ -278,7 +283,7 @@ MODULE targetpot
               IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, VACLEVEL, EFERMI, INFO%NELECT, TPOT%TRUEVACLEVEL, V, VFORMULA,TPOT%VTARGET,&
                                                   &TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
-                                                  &NELECT, TPOT%GCENERGY !, TPOT%V0, TPOT%NELECT0
+                                                  &NELECT, TPOT%GCENERGY, TPOT%GCIONIC !, TPOT%V0, TPOT%NELECT0
           ENDIF
       ENDIF
 
@@ -305,6 +310,7 @@ MODULE targetpot
             &'    ELECTSTEP           =', F16.12,' electrons/step'/  &
             &'    UPDATED NELECT      =', F16.5, ' electrons'/   &
             &'    GCENERGY            =', L16,''/  &
+            &'    GCIONIC             =', L16,''/  &
 !            &'    V0                  =', F16.5, ' V'/   &
 !            &'    NELECT0             =', F16.5, ' electrons'/   &
             &'    =====================================') 
@@ -363,7 +369,7 @@ MODULE targetpot
 
  END SUBROUTINE
 
- SUBROUTINE CAL_GC_COOR( IO, P, INFO, T_INFO, GC_COOR, EFERMI )
+ SUBROUTINE CAL_GC_COOR( IO, P, INFO, T_INFO, GC_COOR, EFERMI, LGCIONIC )
    USE pseudo, ONLY: potcar
    IMPLICIT NONE
    ! Calculate -(NELECT-NELECT0)*EF
@@ -374,11 +380,14 @@ MODULE targetpot
    TYPE(potcar),INTENT(IN)        :: P(T_INFO%NTYP)
    REAL(q), INTENT(INOUT)         :: GC_COOR
    REAL(q), INTENT(IN)            :: EFERMI
+   LOGICAL, INTENT(IN)            :: LGCIONIC
 
    INTEGER :: NI, NT, NIS
 
 
    IF (.NOT. TPOT%GCENERGY) GOTO 9012
+   IF (TPOT%GCIONIC .AND. .NOT. LGCIONIC ) GOTO 9012
+   IF (.NOT. TPOT%GCIONIC .AND. LGCIONIC ) GOTO 9012
    IF (TPOT%ZVALS < 1.d-4 ) THEN
      TPOT%ZVALS = 0.0
      NIS = 1
