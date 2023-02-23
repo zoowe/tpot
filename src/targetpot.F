@@ -1,3 +1,5 @@
+#include "symbol.inc"
+
 MODULE targetpot 
 
  USE prec
@@ -9,6 +11,7 @@ MODULE targetpot
 
  TYPE info_tpot
  LOGICAL :: LTPOT           = .FALSE.  ! Target potential on/off
+ LOGICAL :: TRUEVACLEVEL    = .TRUE.   ! .TRUE. reevaluating vacuum level. .FALSE. = -FERMI_SHIFT
  LOGICAL :: READY           = .FALSE.  ! IF INCAR IS READ
  INTEGER :: METHOD          = 1        ! 1 electronics, 2 ionic
  REAL(q) :: VDIFF           = 0.01     ! Rotential Threshold
@@ -22,6 +25,7 @@ MODULE targetpot
  REAL(q) :: NELECT0         = 0        ! Last Number of electron 
  REAL(q) :: V0              = 0        ! Last Potential 
  REAL(q) :: FERMI_SHIFT     = 0        ! Last FERMI SHIFT
+ REAL(q) :: VACLEVEL        = 0        ! Last Vacuum level
  REAL(q) :: DFERMI_SHIFTLIM = 0.5      ! Limit for change in FERMI_SHIFT
  REAL(q) :: DNELECTLIM      = 1.d-4    ! Limit for amount of electron changed for updating VRATE
  INTEGER :: ITER            = 0        ! Iteration
@@ -40,7 +44,8 @@ MODULE targetpot
  TYPE (info_tpot ) :: TPOT
  TYPE (info_penalty) :: PENPOT
  PUBLIC :: UPDATE_NELECT, TPOT, PENPOT
- 
+ REAL(q), PUBLIC :: VACLEVEL_TPOT
+
  CONTAINS
 
  SUBROUTINE UPDATE_NELECT( IO, INFO, EFERMI, DESUM_, DESUM1_)
@@ -50,7 +55,7 @@ MODULE targetpot
       TYPE (in_struct), INTENT(IN) :: IO
       TYPE (info_struct), INTENT(INOUT) :: INFO
       REAL(q), INTENT(IN)    :: EFERMI, DESUM_, DESUM1_ 
-      REAL(q) :: FERMI_SHIFT, V, NELECT, DNELECT
+      REAL(q) :: FERMI_SHIFT, VACLEVEL, V, NELECT, DNELECT
 
 
       INTEGER IDUM,N,IERR
@@ -59,6 +64,7 @@ MODULE targetpot
       COMPLEX(q) :: CDUM
       CHARACTER*1 :: CHARAC
       CHARACTER*20 :: METHOD
+      CHARACTER*30 :: VFORMULA
  
 
       IF (TPOT%READY == .FALSE.) THEN
@@ -72,6 +78,10 @@ MODULE targetpot
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTMETHOD','=','#',';','I', &
                 TPOT%METHOD,RDUM,CDUM,LDUM,CHARAC,N,1,IERR)
                IF ((IERR/=0).OR.(N<1)) TPOT%METHOD= 1
+              
+               CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTTRUEVACLEVEL','=','#',';','L', &
+                IDUM,RDUM,CDUM,TPOT%TRUEVACLEVEL,CHARAC,N,1,IERR)
+               IF ((IERR/=0).OR.(N<1)) TPOT%TRUEVACLEVEL= .TRUE.
 
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTVTARGET','=','#',';','F', &
                 IDUM,TPOT%VTARGET,CDUM,LDUM,CHARAC,N,1,IERR)
@@ -150,18 +160,36 @@ MODULE targetpot
           TPOT%METHOD = 3
           IF (IO%IU6>=0) WRITE( IO%IU6, 9005 ) LSOL, TPOT%LTPOT, TPOT%METHOD
       ENDIF
-
+   
       FERMI_SHIFT  = VACPOT
       ! Regulate FERMI_SHIFT: VASPSol sometime report ths number wrong.
       IF ( TPOT%ITER > 0 ) THEN
           IF ( abs( FERMI_SHIFT - TPOT%FERMI_SHIFT) > TPOT%DFERMI_SHIFTLIM .AND. abs( FERMI_SHIFT ) < 1.d-4 ) THEN
-              IF (IO%IU6>=0) WRITE( IO%IU6, 9001 ) FERMI_SHIFT, TPOT%FERMI_SHIFT, TPOT%FERMI_SHIFT
+              IF (IO%IU6>=0) WRITE( IO%IU6, 9001 ) 'FERMI_SHIFT', FERMI_SHIFT, TPOT%FERMI_SHIFT, 'FERMI_SHIFT', TPOT%FERMI_SHIFT
               FERMI_SHIFT = TPOT%FERMI_SHIFT
           ENDIF
       ENDIF
       TPOT%FERMI_SHIFT = FERMI_SHIFT
-      V            = -EFERMI - FERMI_SHIFT
-      NELECT       = INFO%NELECT
+
+      VACLEVEL = VACLEVEL_TPOT
+      ! Regulate VACUUM LEVEL: VASPSol sometime report ths number wrong.
+      IF ( TPOT%ITER > 0 ) THEN
+          IF ( abs( VACLEVEL - TPOT%VACLEVEL) > TPOT%DFERMI_SHIFTLIM .AND. abs( VACLEVEL ) < 1.d-4 ) THEN
+              IF (IO%IU6>=0) WRITE( IO%IU6, 9001 ) 'VACLEVEL', VACLEVEL, TPOT%VACLEVEL, 'VACLEVEL', TPOT%VACLEVEL
+              VACLEVEL = TPOT%VACLEVEL
+          ENDIF
+      ENDIF
+
+      TPOT%VACLEVEL    = VACLEVEL
+      IF ( TPOT%TRUEVACLEVEL ) THEN
+          V = -( EFERMI - VACLEVEL )
+          VFORMULA = ' V=-(EFERMI-VACLEVEL)/e'
+      ELSE
+          V = -( EFERMI + FERMI_SHIFT )
+          VFORMULA = ' V=-(EFERMI+FERMI_SHIFT)/e'
+      ENDIF
+
+      NELECT           = INFO%NELECT
 
       ! Calculate rate change
       !IF(IO%IU6>=0) WRITE( IO%IU6, * )'1', ABS( V - TPOT%VTARGET ), TPOT%VDIFF, TPOT%ITER, TPOT%VRATELIM 
@@ -224,7 +252,8 @@ MODULE targetpot
 
           ENDIF
           IF ( INFO%LABORT ) THEN
-              IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, EFERMI, INFO%NELECT, V, TPOT%VTARGET, TPOT%METHOD, METHOD, &
+              IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, VACLEVEL, EFERMI, INFO%NELECT, TPOT%TRUEVACLEVEL, V, VFORMULA, TPOT%VTARGET,&
+                                                  &TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
                                                   &NELECT !, TPOT%V0, TPOT%NELECT0
           ENDIF
@@ -239,22 +268,25 @@ MODULE targetpot
           TPOT%ITER    = TPOT%ITER + 1
 
           IF ( INFO%LABORT ) THEN
-              IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, EFERMI, INFO%NELECT, V, TPOT%VTARGET, TPOT%METHOD, METHOD, &
+              IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, VACLEVEL, EFERMI, INFO%NELECT, TPOT%TRUEVACLEVEL, V, VFORMULA,TPOT%VTARGET,&
+                                                  &TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
                                                   &NELECT !, TPOT%V0, TPOT%NELECT0
           ENDIF
       ENDIF
 
-9001 FORMAT('     TPOT: FERMI_SHIFT IS VERY DIFFERENT FROM THE LAST ITERATION'/&
+9001 FORMAT('     TPOT:',A15,' IS VERY DIFFERENT FROM THE LAST ITERATION'/&
            &'     ', F10.5,' vs ', F10.5,' eV'/&
-           &      'SETTING FERMI_SHIFT = ', F10.5, 'eV')
+           &      'SETTING ',A15,' = ', F10.5, 'eV')
 
 9002 FORMAT( '    ====================================='/ &
             &'    TARGET POTENTIAL ROUTINE'/ &
             &'    FERMI_SHIFT         =', F16.12,' eV'/ &
+            &'    VACLEVEL            =', F16.12,' eV'/ &
             &'    EFERMI              =', F16.12,' eV'/ &
             &'    CURRENT NELECT      =', F16.5, ' electrons'/    &
-            &'    CURRENT POTENTIAL   =', F16.12,' V [= -(EFERMI + FERMI_SHIFT)] '/  &
+            &'    TRUEVACLEVEL        =', L16,''/  &
+            &'    CURRENT POTENTIAL   =', F16.12,' V',A30/  &
             &'    TARGET POT. VTARGET =', F16.12,' V'/  &
             &'    TARGET POT. METHOD  =', I16,' ',A20,''/  &
             &'    ENERGY THRES.VEDIFF =', F16.12,' eV'/  &
@@ -322,5 +354,72 @@ MODULE targetpot
 9011 CONTINUE
 
  END SUBROUTINE
+
+! vaclevel
+!>==========================SUBROUTINE GET_VACUUMLEVEL=================
+!!
+!! compute the fermi shift
+!!
+!!=====================================================================
+SUBROUTINE GET_VACUUMLEVEL(LATT_CUR, T_INFO, GRIDC, WDES, CVPSP, CHTOT)
+
+  USE poscar, ONLY : type_info
+  USE lattice, ONLY : latt, DIRKAR
+  USE mgrid, ONLY : grid_3d
+  USE pseudo, ONLY : potcar
+  USE wave, ONLY : wavedes
+
+  IMPLICIT NONE
+
+  TYPE(type_info),INTENT(IN) :: T_INFO
+  TYPE (latt),INTENT(IN) :: LATT_CUR
+  TYPE (grid_3d) :: GRIDC
+  TYPE (wavedes) :: WDES
+
+  INTEGER(q) :: I
+  COMPLEX(q) :: CVPSP(GRIDC%MPLWV,WDES%NCDIJ)
+  COMPLEX(q) :: CHTOT(GRIDC%MPLWV, WDES%NCDIJ)
+
+  RGRID, ALLOCATABLE :: RCHTOT(:), RV(:)
+  COMPLEX(q), ALLOCATABLE::  CWORK(:), CWORK_V(:), CVHAR(:), CV(:)
+!  REAL(q) :: VACPOT_PSP, VACPOT
+
+  INTEGER :: NODE_ME, IONODE
+
+  ALLOCATE(CWORK(GRIDC%MPLWV), CWORK_V(GRIDC%MPLWV) )
+  ALLOCATE(CVHAR(GRIDC%MPLWV), CV(GRIDC%MPLWV))
+  ALLOCATE(RCHTOT(DIMREAL(GRIDC%MPLWV)), RV(DIMREAL(GRIDC%MPLWV)))
+
+  CWORK = 0._q
+  CWORK_V = 0._q
+  CVHAR = 0._q
+  CV = 0._q
+  RV = 0._q
+  RCHTOT = 0._q
+
+  !copy CHTOT to CWORK
+  CALL RC_ADD(CHTOT, 1.0_q, CHTOT, 0.0_q, CWORK, GRIDC)
+  !charge density to real space, CWORK --> RCHTOT
+  CALL FFT3D(CWORK, GRIDC, 1)
+  CALL UNPACK_C2R(CWORK, 1.0_q, CWORK, 0.0_q, RCHTOT, GRIDC)
+
+
+  CV = 0._q
+  RV = 0._q
+  ! CVPSP --> real
+  CALL RC_ADD(CVPSP, 1.0_q, CVPSP, 0.0_q, CV, GRIDC)
+  CALL FFT3D(CV, GRIDC, 1)
+  CALL UNPACK_C2R(CV, 1.0_q, CV, 0.0_q, RV, GRIDC)
+
+  ! vacuum level
+  CALL GET_VAC_LEVEL(GRIDC, RCHTOT, RV, VACLEVEL_TPOT)
+  IF (SP_IO%IU6>=0)  WRITE(SP_IO%IU0,*) ' VACUUM LEVEL (TPOT)= ', VACLEVEL_TPOT
+
+  DEALLOCATE(RCHTOT, RV)
+  DEALLOCATE(CWORK_V, CWORK, CVHAR, CV)
+
+  RETURN
+
+END SUBROUTINE GET_VACUUMLEVEL
 
 END MODULE 
