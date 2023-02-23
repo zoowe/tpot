@@ -28,6 +28,8 @@ MODULE targetpot
  REAL(q) :: VACLEVEL        = 0        ! Last Vacuum level
  REAL(q) :: DFERMI_SHIFTLIM = 0.5      ! Limit for change in FERMI_SHIFT
  REAL(q) :: DNELECTLIM      = 1.d-4    ! Limit for amount of electron changed for updating VRATE
+ LOGICAL :: GCENERGY        = .TRUE.   ! GC correction -(NELECT - ZVALS)*EFERMI  included in TOTEN
+ REAL(q) :: ZVALS           = 0.0      ! Total number of valence electron for neutral case
  INTEGER :: ITER            = 0        ! Iteration
  END TYPE
 
@@ -122,6 +124,11 @@ MODULE targetpot
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTDNELECTLIM','=','#',';','F',&
                 IDUM,TPOT%DNELECTLIM,CDUM,LDUM,CHARAC,N,1,IERR)
                IF ((IERR/=0).OR.(N<1)) TPOT%DNELECTLIM = 1.d-4
+
+               CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTGCENERGY','=','#',';','L', &
+                IDUM,RDUM,CDUM,TPOT%GCENERGY,CHARAC,N,1,IERR)
+               IF ((IERR/=0).OR.(N<1)) TPOT%GCENERGY = .TRUE.
+
           ENDIF
 
           ! Read information for penalty potential
@@ -227,7 +234,7 @@ MODULE targetpot
           ENDIF
           IF (IO%IU6>=0) WRITE( IO%IU6, 9002 )  FERMI_SHIFT, EFERMI, INFO%NELECT, V, TPOT%VTARGET, TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
-                                                  &NELECT !, TPOT%V0, TPOT%NELECT0
+                                                  &NELECT, TPOT%GCENERGY !, TPOT%V0, TPOT%NELECT0
 
           INFO%NELECT = NELECT
 
@@ -255,7 +262,7 @@ MODULE targetpot
               IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, VACLEVEL, EFERMI, INFO%NELECT, TPOT%TRUEVACLEVEL, V, VFORMULA, TPOT%VTARGET,&
                                                   &TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
-                                                  &NELECT !, TPOT%V0, TPOT%NELECT0
+                                                  &NELECT, TPOT%GCENERGY !, TPOT%V0, TPOT%NELECT0
           ENDIF
           INFO%NELECT = NELECT
 
@@ -271,7 +278,7 @@ MODULE targetpot
               IF (IO%IU6>=0) WRITE( IO%IU6, 9002 ) FERMI_SHIFT, VACLEVEL, EFERMI, INFO%NELECT, TPOT%TRUEVACLEVEL, V, VFORMULA,TPOT%VTARGET,&
                                                   &TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
-                                                  &NELECT !, TPOT%V0, TPOT%NELECT0
+                                                  &NELECT, TPOT%GCENERGY !, TPOT%V0, TPOT%NELECT0
           ENDIF
       ENDIF
 
@@ -297,6 +304,7 @@ MODULE targetpot
             &'    DYNVRATE            =', L16,''/  &
             &'    ELECTSTEP           =', F16.12,' electrons/step'/  &
             &'    UPDATED NELECT      =', F16.5, ' electrons'/   &
+            &'    GCENERGY            =', L16,''/  &
 !            &'    V0                  =', F16.5, ' V'/   &
 !            &'    NELECT0             =', F16.5, ' electrons'/   &
             &'    =====================================') 
@@ -355,6 +363,42 @@ MODULE targetpot
 
  END SUBROUTINE
 
+ SUBROUTINE CAL_GC_COOR( IO, P, INFO, T_INFO, GC_COOR, EFERMI )
+   USE pseudo, ONLY: potcar
+   IMPLICIT NONE
+   ! Calculate -(NELECT-NELECT0)*EF
+
+   TYPE (in_struct), INTENT(IN)   :: IO
+   TYPE(type_info), INTENT(IN)    :: T_INFO
+   TYPE (info_struct), INTENT(IN) :: INFO
+   TYPE(potcar),INTENT(IN)        :: P(T_INFO%NTYP)
+   REAL(q), INTENT(INOUT)         :: GC_COOR
+   REAL(q), INTENT(IN)            :: EFERMI
+
+   INTEGER :: NI, NT, NIS
+
+
+   IF (.NOT. TPOT%GCENERGY) GOTO 9012
+   IF (TPOT%ZVALS < 1.d-4 ) THEN
+     TPOT%ZVALS = 0.0
+     NIS = 1
+     type:DO NT=1,T_INFO%NTYP
+       ions: DO NI=NIS,T_INFO%NITYP(NT)+NIS-1
+         TPOT%ZVALS =  TPOT%ZVALS+ P(NT)%ZVALF
+       ENDDO ions
+     ENDDO type
+   ENDIF
+
+   GC_COOR = -( INFO%NELECT - TPOT%ZVALS ) * EFERMI
+   !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'ZVALS', TPOT%ZVALS
+   !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'NELECT', INFO%NELECT
+   !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'EFERMI', EFERMI
+
+9012 CONTINUE
+
+ END SUBROUTINE
+
+ 
 ! vaclevel
 !>==========================SUBROUTINE GET_VACUUMLEVEL=================
 !!
@@ -413,7 +457,7 @@ SUBROUTINE GET_VACUUMLEVEL(LATT_CUR, T_INFO, GRIDC, WDES, CVPSP, CHTOT)
 
   ! vacuum level
   CALL GET_VAC_LEVEL(GRIDC, RCHTOT, RV, VACLEVEL_TPOT)
-  IF (SP_IO%IU6>=0)  WRITE(SP_IO%IU0,*) ' VACUUM LEVEL (TPOT)= ', VACLEVEL_TPOT
+  !IF (SP_IO%IU6>=0)  WRITE(SP_IO%IU0,*) ' VACUUM LEVEL (TPOT)= ', VACLEVEL_TPOT
 
   DEALLOCATE(RCHTOT, RV)
   DEALLOCATE(CWORK_V, CWORK, CVHAR, CV)
