@@ -20,13 +20,13 @@ TPOTGCIONIC         = .TRUE.   # Calculate grand canonical energy only at the en
 
 There are currently two methods for updating ```NELECT```. 
 
-:one: Electronic step
+:one: Electronic steps
 
 ```TPOTMETHOD    = 1```
 
 Number of electrons is updated at every electronic step to reach target potential. This method could be expensive.
 
-:two: Ionic step
+:two: Ionic steps
 
 ```TPOTMETHOD    = 2```
 
@@ -49,7 +49,7 @@ INTEGER, DEFAULT: 2
 
 1: Updating ```NELECT``` for each SCF cycle.
 
-2. Updating ```NELECT``` for each ionic iteration.
+2: Updating ```NELECT``` for each ionic iteration.
 
 ### TPOTTRUEVACLEVEL
 
