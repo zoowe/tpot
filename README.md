@@ -7,69 +7,15 @@
 The following is instruction for CPU code. The precedure is the same for GPU (i.e. files ended with _gpu.F)
 
 
-:one: Admend electron.F
+:one: Make nessesary changes to source of VASP code
 
-Add the following to electron.F, the code between ```Begin``` and ```End``` ```target potential```
+Follow the instruction here: MODIFICATION_TO_VASP.md
 
+:two: Update VASPSol
 
-```
-! solvation__
-      USE solvation
-!------ Begin target potential
-      USE targetpot
-!------ End target potential
-! solvation__
-```
+Download and follow instruction at https://github.com/zoowe/VASPsol/
 
-```Fortran
-        IF(INFO%IHARMONIC==1)THEN
-           CALL WRITE_EIGENVAL_RESIDUAL( WDES, W, IO%IU6)
-        ELSE
-           CALL WRITE_EIGENVAL( WDES, W, IO%IU6)
-        END IF
-      io_end
-      ENDIF
-
-
-!------ Begin target potential
-      CALL UPDATE_NELECT( IO, INFO, EFERMI, DESUM(N), DESUM1 ) 
-!------ End  target potential
-
-      IF (((NSTEP==1 .OR. NSTEP==DYN%NSW).AND.INFO%LABORT).OR. &
-     &     (IO%NWRITE>=1 .AND.INFO%LABORT).OR.IO%NWRITE>=3) THEN
-      io_begin
-!-----Charge-density along one line
-```
-
-:two: Admend .objects with ```targetpot.o```, right after ```solvation.o```
-```
-        solvation.o \
-        targetpot.o \
-        pot.o \
-```
-
-:three: Update VASPSol
-
-There is a small modification to ```VASPSol/src/solvation.F```. 
-
-Download from: https://github.com/zoowe/VASPsol/tree/tpot/src 
-
-Or modify your current ```solvation.F```, at the begining of ```MODULE POT_K```
-```
- LOGICAL, SAVE :: LDEFAULTPCM = .FALSE.
- LOGICAL, SAVE :: LJDFTX = .FALSE.
-!------ Begin Target Potential
- REAL(q), PUBLIC, SAVE :: VACPOT_PSP, VACPOT
-!------ End Target Potential
- CONTAINS
-```
-and in ```SUBROUTINE GET_FERMISHIFT```
-```
-  COMPLEX(q), ALLOCATABLE::  CWORK(:), CWORK_V(:), CVHAR(:), CV(:) 
-!  REAL(q) :: VACPOT_PSP, VACPOT
-  INTEGER :: NODE_ME, IONODE
-```
-:four: Copy main source code
+:three: Copy main source code
 
 Copy ```src/targetpot.F``` to vasp ```src``` folder
 
@@ -79,8 +25,7 @@ Copy ```src/targetpot.F``` to vasp ```src``` folder
 
 The following are available keyword to add in ```INCAR```
 ```
-LTPOT               = .FALSE.  # Turn on/off TPOT
-TPOTMETHOD          = 1        # 1 electronics, 2 ionic
+TPOTTRUEVACLEVEL    = .TRUE.   # Use true vacuum level or FERMI_SHIFT
 TPOTVTARGET         = 3.44     # Target potential
 TPOTVDIFF           = 0.01     # Rotential Threshold
 TPOTVRATE           = -1.0     # Initial Rate of changing NELECT, V/electron
@@ -91,7 +36,8 @@ TPOTDYNVRATE        = .TRUE.   # Updating NELECT with VRATE
 TPOTELECTSTEP       = 0.01     # (Maximum) Amount of electrons changed.
 TPOTDFERMI_SHIFTLIM = 0.5      # Limit for change in FERMI_SHIFT
 TPOTDNELECTLIM      = 1.d-4    # Limit for amount of electron changed for updating VRATE.
-
+TPOTGCENERGY        = .TRUE.   # Calculate grand canonical energy
+TPOTGCIONIC         = .TRUE.   # Calculate grand canonical energy only at the end of ionic iteration
 ```
 
 There are currently two methods for updating ```NELECT```. 
@@ -113,7 +59,7 @@ In both methods, it is benificial to start calculation with a reasonable ```NELE
 
 # Details of each keyword
 
-### LPOT
+### LTPOT
 
 LOGICAL, DEFAULT: .FALSE.
 
@@ -126,6 +72,13 @@ INTEGER, DEFAULT: 2
 1: Updating ```NELECT``` for each SCF cycle.
 
 2. Updating ```NELECT``` for each ionic iteration.
+
+### TPOTTRUEVACLEVEL
+
+LOGICAL, DEFAULT: .TRUE.
+
+If .TRUE., electrode potential is calculated as -(EFERMI-VACLEVEL)/e 
+If .FALSE., electrode potential is calculated as -(EFERMI+FERMI_SHIFT)/e 
 
 ### TPOTVTARGET
 
@@ -186,6 +139,19 @@ Sometime, VASPSol could not calculate FERMI_SHIFT (reported at 0.0 or any non-re
 REAL, DEFAULT: 1.d-4 electron
 
 To avoid divergence, if the difference in ```NELECT``` between two consecutive steps is smaller than ```TPOTDNELECTLIM```, ```TPOTVRATE``` is not updated.
+
+### TPOTGCENERGY
+
+LOGICAL, DEFAULT: .TRUE.
+
+Calculate grand canonical energy
+
+### TPOTGCIONIC
+
+LOGICAL, DEFAULT: .TRUE.
+
+Calculate grand canonical energy only at the end of ionic iteration
+
 
 # Examples
 
