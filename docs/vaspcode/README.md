@@ -2,7 +2,7 @@
 
 Since we can not provide a batch for VASP (according to its licence agreement), we provide a list of changes that we need to make to ```electron.F```, ```pot.F```, ```main.F```, and ```.objects``` files.
 
-These instruction below are exlicitly for vasp 5.4.4. For other version, users need to make appropriate corretions (expect to be similar). 
+These instruction below are exlicitly for vasp 5.4.4. For other version, users need to make appropriate corretions (expected to be similar). 
 
 :one: electron.F
 
