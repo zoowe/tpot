@@ -1,11 +1,12 @@
 # Modification to VASP code 
 
-Since we can not provide a batch for VASP (according to its licence agreement), we provide here a list of changes that we need to make to ```electron.F```, ```pot.F```, ```main.F```, and ```.objects``` files.
+Since we can not provide a batch for VASP (according to its licence agreement), we provide a list of changes that we need to make to ```electron.F```, ```pot.F```, ```main.F```, and ```.objects``` files.
+
+These instruction below are exlicitly for vasp 5.4.4. For other version, users need to make appropriate corretions (expect to be similar). 
 
 :one: electron.F
 
-Compare the followng blocks of the codes with those in electron.F to make modification. There are changes between ```Begin tpot``` and ```End tpot```
-
+Compare the followng blocks of the codes with those in ```electron.F``` to make nessesary modifications. There are changes between ```Begin tpot``` and ```End tpot```
 
 ```Fortran 
 ! solvation__
@@ -133,7 +134,7 @@ Compare the followng blocks of the codes with those in electron.F to make modifi
 
 :two: pot.F
 
-Compare the followng blocks of the code with those in pot.F to make modification. There are changes between ```Begin tpot``` and ```End tpot```
+Compare the followng blocks of the code with those in ```pot.F``` to make nessesary modifications. There are changes between ```Begin tpot``` and ```End tpot```
 
 ```Fortran
 ! solvation__
@@ -199,7 +200,7 @@ Compare the followng blocks of the code with those in pot.F to make modification
 
 :three: main.F
 
-Compare the followng blocks of the code with those in main.F to make modification. There are changes between ```Begin tpot``` and ```End tpot```
+Compare the followng blocks of the code with those in ```main.F``` to make nessesary modifications. There are changes between ```Begin tpot``` and ```End tpot```
 
 ```Fortran
 ! solvation__
