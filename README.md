@@ -9,7 +9,7 @@ The following is instruction for CPU code. The precedure is the same for GPU (i.
 
 :one: Make nessesary changes to source of VASP code
 
-Follow the instruction here: MODIFICATION_TO_VASP.md
+Follow the instruction here: [MODIFICATION_TO_VASP.md](MODIFICATION_TO_VASP.md)
 
 :two: Update VASPSol
 
