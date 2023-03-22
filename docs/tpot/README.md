@@ -33,7 +33,7 @@ Number of electrons is updated at every electronic step to reach target potentia
 Number of electrons is updated at the end of each ionic step if current potential is not close to the target potential. 
 
 
-In both methods, it is benificial to start calculation with a reasonable ```NELECT``` for your target potential (Use ```ISTART = 1```). It can be estimated by doing a series of SCF calculations with different ```NELECT```. 
+In both methods, it is benificial to start calculation with a reasonable ```NELECT``` for your target potential. It can be estimated by doing a series of SCF calculations with different ```NELECT``` or it can be optimized as shown in examples for ```Charging electrode to reach a target potential``` below. 
 
 ## Details of each keyword
 
