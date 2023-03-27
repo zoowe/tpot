@@ -10,7 +10,7 @@ Follow the instruction for [vasp 5.4.4](docs/vaspcode)
 
 :two: Update VASPSol
 
-Download and follow instruction at https://github.com/zoowe/VASPsol/tree/solhybrid
+Download and follow instruction at https://github.com/zoowe/VASPsol/
 
 :three: Copy main source code
 
