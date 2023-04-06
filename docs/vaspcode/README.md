@@ -35,20 +35,18 @@ Compare the followng blocks of the codes with those in ```electron.F``` to make 
 !=======================================================================
       GC_COOR = 0
       CALL CAL_GC_COOR( IO, P, INFO, T_INFO, GC_COOR, EFERMI, .FALSE. )
+!------ End tpot
 !=======================================================================
 ! calculate free-energy and bandstructur-energy
-! EBANDSTR = sum of the energy eigenvalues of the electronic states
-!         weighted by the relative weight of the special k point
-! TOTEN = total free energy of the system
-!=======================================================================
+```
+
+```Fortran
       E%EBANDSTR=BANDSTRUCTURE_ENERGY(WDES, W)
+!------ Begin tpot
       TOTEN=E%EBANDSTR+E%DENC+E%XCENC+E%TEWEN+E%PSCENC+E%EENTROPY+E%PAWPS+E%PAWAE+INFO%EALLAT+E%EXHF+ECORE()+&
             & Ediel_sol + GC_COOR
 !------ End tpot
 !-MM- Added to accomodate constrained moment calculations
-      IF (M_CONSTRAINED()) TOTEN=TOTEN+E_CONSTRAINT()
-      io_begin
-      CALL WRITE_CONSTRAINED_M(17,.FALSE.)
 ```
 
 ```Fortran
@@ -67,56 +65,27 @@ Compare the followng blocks of the codes with those in ```electron.F``` to make 
                          TOTEN-E%EENTROPY,TOTEN-E%EENTROPY/(2+NORDER)
       ENDIF
 
-      IF (LHFCALC) THEN 
-         WRITE(IO%IU6,'( "  exchange ACFDT corr.  = ",F18.8,"  see jH, gK, PRB 81, 115126")') E%EXHF_ACFDT
-      ENDIF
-
-7240  FORMAT(/ &
-              ' Free energy of the ion-electron system (eV)'/ &
-     &        '  ---------------------------------------------------'/ &
-     &        '  alpha Z        PSCENC = ',F18.8/ &
-     &        '  Ewald energy   TEWEN  = ',F18.8/ &
-     &        '  -Hartree energ DENC   = ',F18.8/ &
-     &        '  -exchange      EXHF   = ',F18.8/ &
-     &        '  -V(xc)+E(xc)   XCENC  = ',F18.8/ &
-     &        '  PAW double counting   = ',2F18.8/ &
-     &        '  entropy T*S    EENTRO = ',F18.8/ &
-     &        '  eigenvalues    EBANDS = ',F18.8/ &
-     &        '  atomic energy  EATOM  = ',F18.8/ &
-     &        '  Solvation  Ediel_sol  = ',F18.8/ &
-     &        '  GC corr.     GC_COOR  = ',F18.8/ &
-     &        '  ---------------------------------------------------'/ &
-     &        '  free energy    TOTEN  = ',F18.8,' eV'// &
-     &        '  energy without entropy =',F18.8, &
-     &        '  energy(sigma->0) =',F18.8)
-7241  FORMAT(/ &
-              ' Free energy of the ion-electron system (eV)'/ &
-     &        '  ---------------------------------------------------'/ &
-     &        '  alpha Z        PSCENC = ',F18.8/ &
-     &        '  Ewald energy   TEWEN  = ',F18.8/ &
-     &        '  -Hartree energ DENC   = ',F18.8/ &
-     &        '  -exchange      EXHF   = ',F18.8/ &
-     &        '  -V(xc)+E(xc)   XCENC  = ',F18.8/ &
-     &        '  PAW double counting   = ',2F18.8/ &
-     &        '  entropy T*S    EENTRO = ',F18.8/ &
-     &        '  eigenvalues    EBANDS = ',F18.8/ &
-     &        '  core contrib.  ECORE  = ',F18.8/ &
-     &        '  Solvation  Ediel_sol  = ',F18.8/ &
-     &        '  GC corr.     GC_COOR  = ',F18.8/ &
-     &        '  ---------------------------------------------------'/ &
-     &        '  free energy    TOTEN  = ',F18.8,' eV'// &
-     &        '  energy without entropy =',F18.8, &
-     &        '  energy(sigma->0) =',F18.8)
 !------ End tpot
-72612 FORMAT(//&
-     &        '  METAGGA EXCHANGE AND CORRELATION (eV)'/ &
-     &        '  ---------------------------------------------------'/ &
-     &        '  LDA+GGA E(xc)  EXCG   = ',F18.6/ &
+      IF (LHFCALC) THEN 
 ```
+
 ```Fortran
-        IF(INFO%IHARMONIC==1)THEN
-           CALL WRITE_EIGENVAL_RESIDUAL( WDES, W, IO%IU6)
-        ELSE
+     &        '  Solvation  Ediel_sol  = ',F18.8/ &
+!------ Begin tpot
+     &        '  GC corr.     GC_COOR  = ',F18.8/ &
+!------ End tpot
+     &        '  ---------------------------------------------------'/ &
+```
+Do the same for the block of code below.
+```Fortran
+     &        '  Solvation  Ediel_sol  = ',F18.8/ &
+!------ Begin tpot
+     &        '  GC corr.     GC_COOR  = ',F18.8/ &
+!------ End tpot
+     &        '  ---------------------------------------------------'/ &
+```
+
+```Fortran
            CALL WRITE_EIGENVAL( WDES, W, IO%IU6)
         END IF
       io_end
@@ -124,12 +93,9 @@ Compare the followng blocks of the codes with those in ```electron.F``` to make 
 
 !------ Begin tpot
       CALL UPDATE_NELECT( IO, INFO, EFERMI, DESUM(N), DESUM1 ) 
-!------ End  target potential
+!------ End  tpot
 
       IF (((NSTEP==1 .OR. NSTEP==DYN%NSW).AND.INFO%LABORT).OR. &
-     &     (IO%NWRITE>=1 .AND.INFO%LABORT).OR.IO%NWRITE>=3) THEN
-      io_begin
-!-----Charge-density along one line
 ```
 
 :two: pot.F
@@ -147,20 +113,15 @@ Compare the followng blocks of the code with those in ```pot.F``` to make nesses
 ```
 
 ```Fortran
-! work arrays (allocated after call to FEXCG)
       COMPLEX(q), ALLOCATABLE::  CWORK1(:),CWORK(:,:)
 !------ Begin tpot
       COMPLEX(q), ALLOCATABLE :: CVTOT_XC(:,:)
 !------ End tpot
       REAL(q) ELECTROSTATIC
-      LOGICAL, EXTERNAL :: L_NO_LSDA_GLOBAL
 ```
 
 ```Fortran
-#endif
-#endif
 !-MM- end of addition
-
 !------ Begin tpot
 !-----------------------------------------------------------------------
 ! Save XC CVTOT to CVTOT_XC
@@ -183,9 +144,6 @@ Compare the followng blocks of the code with those in ```pot.F``` to make nesses
 ```
 
 ```Fortran
-! bexternal__
-      IF (LBEXTERNAL()) CALL BEXT_ADDV(CVTOT,GRIDC,SIZE(CVTOT,2))
-! bexternal__
       CALL POT_FLIP(CVTOT, GRIDC,WDES%NCDIJ )
 !------ Begin tpot
       CALL GET_FERMISHIFT(LATT_CUR, T_INFO, GRIDC, WDES, CWORK, CHTOT)
@@ -194,8 +152,6 @@ Compare the followng blocks of the code with those in ```pot.F``` to make nesses
 !------ End tpot
 !=======================================================================
 ! if overlap is used :
-! copy CVTOT to SV and set contribution of unbalanced lattice-vectors
-! to zero,  then  FFT of SV and CVTOT to real space
 ```
 
 :three: main.F
@@ -237,24 +193,16 @@ Compare the followng blocks of the code with those in ```main.F``` to make nesse
 !------ End tpot
 
       ! no forces for OEP methods (EXXOEP/=0)
-      ! no forces for IALGO=1-4
-      ! no forces if potential was read in INFO%INICHG==4
 ```
 
 ```Fortran
-#ifdef libbeef
-      IF(LBEEFENS) LBEEFCALCBASIS = .TRUE.
-#endif
-!------ Begin tpot
-      IF (IO%IU6>=0) THEN
          WRITE(TIU6,130)
+!------ Begin tpot
          WRITE(TIU6,7261) '  FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)', & 
             TOTEN,TOTEN-E%EENTROPY,TOTEN-E%EENTROPY/(2+NORDER),GC_COOR
-      ENDIF
 !------ End tpot
+      ENDIF
       IF (DYN%PSTRESS/=0) THEN
-         TOTEN=TOTEN+DYN%PSTRESS/(EVTOJ*1E22_q)*LATT_CUR%OMEGA
-
 ```
 
 :four: Admend .objects with ```targetpot.o```, right after ```solvation.o```
