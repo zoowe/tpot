@@ -230,10 +230,10 @@ Compare the followng blocks of the code with those in ```main.F``` to make nesse
  7261 FORMAT(/ &
      &        A/ &
      &        '  ---------------------------------------------------'/ &
-     &        '  free  energy   TOTEN  = ',F18.8,' eV' /&
-     &        '  GC Correction         = ',F18.8,' eV included in TOTEN'// &
+     &        '  free  energy   TOTEN  = ',F18.8,' eV' //&
      &        '  energy  without entropy=',F18.8, &
-     &        '  energy(sigma->0) =',F18.8)
+     &        '  energy(sigma->0) =',F18.8, //&
+     &        '  GC Correction         = ',F18.8,' eV included in TOTEN')
 !------ End tpot
 
       ! no forces for OEP methods (EXXOEP/=0)
@@ -249,7 +249,7 @@ Compare the followng blocks of the code with those in ```main.F``` to make nesse
       IF (IO%IU6>=0) THEN
          WRITE(TIU6,130)
          WRITE(TIU6,7261) '  FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)', & 
-            TOTEN,GC_COOR,TOTEN-E%EENTROPY,TOTEN-E%EENTROPY/(2+NORDER)
+            TOTEN,TOTEN-E%EENTROPY,TOTEN-E%EENTROPY/(2+NORDER),GC_COOR
       ENDIF
 !------ End tpot
       IF (DYN%PSTRESS/=0) THEN
