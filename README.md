@@ -1,6 +1,6 @@
 # tpot
 
-```tpot``` is a ```Fortran``` code that enables Grand Canonical simulations of liquid/solid interface with Density Functional theory by controlling number of electrons in the simulation supercell so that the work function reaches a target value. It runs with the [VASP code](https://www.vasp.at/) and [VASPSol](https://github.com/zoowe/VASPsol/tree/solhybrid) package.
+```tpot``` is a ```Fortran``` code that enables Grand Canonical simulations of liquid/solid interface with Density Functional theory by controlling number of electrons in the simulation supercell so that the work function reaches a target value. It runs with the [VASP code](https://www.vasp.at/) and [VASPSol](https://github.com/zoowe/VASPsol/) package.
 
 ## Installation
 
