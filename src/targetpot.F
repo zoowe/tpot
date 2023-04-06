@@ -70,13 +70,13 @@ MODULE targetpot
       CHARACTER*30 :: VFORMULA
  
 
-      IF (TPOT%READY == .FALSE.) THEN
+      IF ( .NOT. TPOT%READY ) THEN
           LOPEN=.FALSE.
           OPEN(UNIT=IO%IU5,FILE='INCAR',STATUS='OLD')
           CALL RDATAB(LOPEN,'INCAR',IO%IU5,'LTPOT','=','#',';','L', &
                 IDUM,RDUM,CDUM,TPOT%LTPOT,CHARAC,N,1,IERR)
           IF ((IERR/=0).OR.(N<1)) TPOT%LTPOT=.FALSE.
-          IF (TPOT%LTPOT == .TRUE. ) THEN
+          IF (TPOT%LTPOT ) THEN
 
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTMETHOD','=','#',';','I', &
                 TPOT%METHOD,RDUM,CDUM,LDUM,CHARAC,N,1,IERR)
@@ -162,13 +162,13 @@ MODULE targetpot
           TPOT%V0      = 10000
       ENDIF
 
-      IF ( LSOL == .FALSE. ) THEN
+      IF ( .NOT. LSOL ) THEN
           IF (IO%IU6>=0) WRITE( IO%IU6, 9004 )
           TPOT%LTPOT = .FALSE.
           GOTO 9006 
       ENDIF
 
-      IF ( LSOL .AND. TPOT%LTPOT == .FALSE. .AND. TPOT%ITER == 0 ) THEN
+      IF ( LSOL .AND. .NOT. TPOT%LTPOT .AND. TPOT%ITER == 0 ) THEN
           TPOT%METHOD = 3
           IF (IO%IU6>=0) WRITE( IO%IU6, 9005 ) LSOL, TPOT%LTPOT, TPOT%METHOD
       ENDIF
