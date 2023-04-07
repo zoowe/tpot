@@ -3,6 +3,8 @@
 The following are available keywords for using ```TPOT```. They should be added to ```INCAR```
 
 ```
+LTPOT               = .FALSE.  # Turn on/off TPOT
+TPOTMETHOD          = 2        # Optimize NELECT for scf (1) or ionic (2) step.
 TPOTTRUEVACLEVEL    = .TRUE.   # Use true vacuum level or FERMI_SHIFT
 TPOTVTARGET         = 3.44     # Target potential
 TPOTVDIFF           = 0.01     # Rotential Threshold
@@ -47,7 +49,7 @@ This keywork turns on and off target potential routine.
 
 INTEGER, DEFAULT: 2
 
-1: Updating ```NELECT``` for each SCF cycle.
+1: Updating ```NELECT``` for each SCF step.
 
 2: Updating ```NELECT``` for each ionic iteration.
 
@@ -92,13 +94,13 @@ Damping factor for TPOTVRATE. It changes how agressive ```NELECT``` to be update
 
 REAL, DEFAULT: 1.d-4 eV
 
-For ```TPOTMETHOD = 1```, ```NELECT``` is updated only if energy converge to ```TPOTVEDIFF```. It should be set to a value smaller than ```EDIFF```.
+For ```TPOTMETHOD = 1```, ```NELECT``` is updated only if energy converges to ```TPOTVEDIFF```. It should be set to a value smaller than ```EDIFF```.
 
 ### TPOTDYNVRATE
 
 LOGICAL, DEFAULT: TRUE
 
-It controls how ```NELECT``` is updated. If it is ```.TRUE.```, ```NELECT``` is update with ```TPOTVRATE```, otherwise, it is updated by an increasment ```TPOTELECTSTEP```.
+It controls how ```NELECT``` is updated. If it is ```.TRUE.```, ```NELECT``` is updated with ```TPOTVRATE```, otherwise, it is updated by an increasment ```TPOTELECTSTEP```.
 
 ### TPOTELECTSTEP
 
@@ -122,7 +124,7 @@ To avoid divergence, if the difference in ```NELECT``` between two consecutive s
 
 LOGICAL, DEFAULT: .TRUE.
 
-Calculate grand canonical energy
+Calculate grand canonical energy by adding ```q*EFERMI``` (i.e., Grand Canonical correction) to total energy.
 
 ### TPOTGCIONIC
 
@@ -181,13 +183,13 @@ It is important to start with a reasonable ```NELECT```. Use the above example t
 
 ```
 #Molecular dynamics setting
-BRION  =   0
-POTIM  =   1  # step =  1 fs
-NSW    =   5000  #
-MDALGO = 2
-SMASS  =   0
-TEBEG  = 298.15     # initial temperature
-TEEND  = 298.15     # final temperature.
+IBRION  =   0
+POTIM   =   1  # step =  1 fs
+NSW     =   5000  #
+MDALGO  = 2
+SMASS   =   0
+TEBEG   = 298.15     # initial temperature
+TEEND   = 298.15     # final temperature.
 
 
 #VASPSol with SOLHYBRID model
