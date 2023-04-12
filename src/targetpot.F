@@ -8,6 +8,7 @@ MODULE targetpot
  USE base
  USE lattice
  USE poscar
+ USE main_mpi
 
  TYPE info_tpot
  LOGICAL :: LTPOT           = .FALSE.  ! Target potential on/off
@@ -62,8 +63,8 @@ MODULE targetpot
 
 
       INTEGER IDUM,N,IERR
-      LOGICAL :: LOPEN,LDUM
-      REAL(q) :: RDUM
+      LOGICAL :: LOPEN,LDUM, TPOTCAR_EXISTS
+      REAL(q) :: RDUM, NEB_NELECT
       COMPLEX(q) :: CDUM
       CHARACTER*1 :: CHARAC
       CHARACTER*20 :: METHOD
@@ -76,7 +77,7 @@ MODULE targetpot
           CALL RDATAB(LOPEN,'INCAR',IO%IU5,'LTPOT','=','#',';','L', &
                 IDUM,RDUM,CDUM,TPOT%LTPOT,CHARAC,N,1,IERR)
           IF ((IERR/=0).OR.(N<1)) TPOT%LTPOT=.FALSE.
-          IF (TPOT%LTPOT ) THEN
+          IF ( TPOT%LTPOT ) THEN
 
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTMETHOD','=','#',';','I', &
                 TPOT%METHOD,RDUM,CDUM,LDUM,CHARAC,N,1,IERR)
@@ -172,7 +173,18 @@ MODULE targetpot
           TPOT%METHOD = 3
           IF (IO%IU6>=0) WRITE( IO%IU6, 9005 ) LSOL, TPOT%LTPOT, TPOT%METHOD
       ENDIF
-   
+
+      ! Update NELECT with TPOTCAR During TPOT%ITER == 0
+      IF ( TPOT%ITER == 0 ) THEN
+          INQUIRE(FILE = DIR_APP(1:DIR_LEN)//"TPOTCAR", EXIST = tpotcar_exists)
+          IF ( tpotcar_exists ) THEN
+              OPEN(UNIT=9101,FILE=DIR_APP(1:DIR_LEN)//"TPOTCAR",STATUS='OLD')
+              READ(9101,*) NEB_NELECT 
+              INFO%NELECT = NEB_NELECT
+              CLOSE(9101)
+          ENDIF
+      ENDIF
+
       FERMI_SHIFT  = VACPOT
       ! Regulate FERMI_SHIFT: VASPSol sometime report ths number wrong.
       IF ( TPOT%ITER > 0 ) THEN

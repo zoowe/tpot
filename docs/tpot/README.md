@@ -132,6 +132,9 @@ LOGICAL, DEFAULT: .TRUE.
 
 Calculate grand canonical energy only at the end of ionic iteration
 
+# TPOTCAR for Nudged Elastic Band (NEB) calculations
+
+VASP uses one ```INCAR``` file for all images, thus starting ```NELECT``` of all images are the same. It is important to set starting ```NELECT``` for each image to make sure its starting potential as close to the target potential as possible. Before the first updating ```NELECT```, ```TPOT``` will search for a file ```TPOTCAR``` in ```0X``` folder to read the starting ```NELECT``` for image ```0x```. There is only one number in ```TPOTCAR``` that is the starting ```NELECT```. 
 
 # Examples
 
