@@ -8,7 +8,7 @@ MODULE targetpot
  USE base
  USE lattice
  USE poscar
- USE main_mpi
+USE main_mpi, ONLY: DIR_APP, DIR_LEN
 
  TYPE info_tpot
  LOGICAL :: LTPOT           = .FALSE.  ! Target potential on/off
