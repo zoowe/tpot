@@ -410,7 +410,13 @@ MODULE targetpot
      ENDDO type
    ENDIF
 
-   GC_COOR = -( INFO%NELECT - TPOT%ZVALS ) * EFERMI
+   IF ( LGCIONIC ) THEN
+     ! Ionic iteration: NELECT has been updated, use NELECT0
+     GC_COOR = -( TPOT%NELECT0 - TPOT%ZVALS ) * EFERMI
+   ELSE
+     ! Electronic iteration: NELECT has not been updated
+     GC_COOR = -( INFO%NELECT  - TPOT%ZVALS ) * EFERMI
+   ENDIF
    !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'ZVALS', TPOT%ZVALS
    !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'NELECT', INFO%NELECT
    !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'EFERMI', EFERMI
