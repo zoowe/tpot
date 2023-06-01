@@ -181,6 +181,7 @@ MODULE targetpot
               OPEN(UNIT=9101,FILE=DIR_APP(1:DIR_LEN)//"TPOTCAR",STATUS='OLD')
               READ(9101,*) NEB_NELECT 
               INFO%NELECT = NEB_NELECT
+              TPOT%NELECT0 = INFO%NELECT
               CLOSE(9101)
           ENDIF
       ENDIF
