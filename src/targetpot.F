@@ -23,8 +23,9 @@ MODULE targetpot
  REAL(q) :: VEDIFF          = 1.d-4    ! Energy threshold of electronic iteration to start updating NELECT
  LOGICAL :: DYNVRATE        = .TRUE.   ! Updating NELECT with VRATE
  REAL(q) :: ELECTSTEP       = 0.01     ! (Maximum) Amount of electrons changed.
- REAL(q) :: NELECT0         = 0        ! Last Number of electron 
- REAL(q) :: V0              = 0        ! Last Potential 
+ REAL(q) :: NELECT0         = 0        ! Last Number of electron (before updating) 
+ REAL(q) :: V0              = 0        ! Last Potential (NELECT0)
+ REAL(q) :: NELECTCURRENT   = 0        ! CURRENT NELECT 
  REAL(q) :: FERMI_SHIFT     = 0        ! Last FERMI SHIFT
  REAL(q) :: VACLEVEL        = 0        ! Last Vacuum level
  REAL(q) :: DFERMI_SHIFTLIM = 0.5      ! Limit for change in FERMI_SHIFT
@@ -253,7 +254,7 @@ MODULE targetpot
           IF (IO%IU6>=0) WRITE( IO%IU6, 9002 )  FERMI_SHIFT, EFERMI, INFO%NELECT, V, TPOT%VTARGET, TPOT%METHOD, METHOD, &
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
                                                   &NELECT, TPOT%GCENERGY, TPOT%GCIONIC !, TPOT%V0, TPOT%NELECT0
-
+          TPOT%NELECTCURRENT = INFO%NELECT
           INFO%NELECT = NELECT
 
       ELSEIF ( TPOT%METHOD == 2 ) THEN
@@ -282,6 +283,7 @@ MODULE targetpot
                                                   &TPOT%VEDIFF, TPOT%VDIFF, TPOT%VRATE, TPOT%VRATELIM, TPOT%VRATEDAMP, TPOT%DYNVRATE, TPOT%ELECTSTEP, &
                                                   &NELECT, TPOT%GCENERGY, TPOT%GCIONIC !, TPOT%V0, TPOT%NELECT0
           ENDIF
+          TPOT%NELECTCURRENT = INFO%NELECT
           INFO%NELECT = NELECT
 
       ELSE
@@ -413,14 +415,17 @@ MODULE targetpot
 
    IF ( LGCIONIC ) THEN
      ! Ionic iteration: NELECT has been updated, use NELECT0
-     GC_COOR = -( TPOT%NELECT0 - TPOT%ZVALS ) * EFERMI
+     GC_COOR = -( TPOT%NELECTCURRENT - TPOT%ZVALS ) * EFERMI
    ELSE
      ! Electronic iteration: NELECT has not been updated
      GC_COOR = -( INFO%NELECT  - TPOT%ZVALS ) * EFERMI
    ENDIF
-   !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'ZVALS', TPOT%ZVALS
-   !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'NELECT', INFO%NELECT
-   !IF (IO%IU6>=0)  WRITE(IO%IU0,*) 'EFERMI', EFERMI
+   !IF (IO%IU6>=0)  WRITE(IO%IU6,*) 'ZVALS', TPOT%ZVALS
+   !IF (IO%IU6>=0)  WRITE(IO%IU6,*) 'NELECT', INFO%NELECT
+   !IF (IO%IU6>=0)  WRITE(IO%IU6,*) 'NELECT0', TPOT%NELECT0
+   !IF (IO%IU6>=0)  WRITE(IO%IU6,*) 'NELECTCURRENT', TPOT%NELECTCURRENT
+   !IF (IO%IU6>=0)  WRITE(IO%IU6,*) 'EFERMI', EFERMI
+   !IF (IO%IU6>=0)  WRITE(IO%IU6,*) 'CG_CORR', GC_COOR
 
 9012 CONTINUE
 
