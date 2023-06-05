@@ -37,6 +37,9 @@ Number of electrons is updated at the end of each ionic step if current potentia
 
 In both methods, it is benificial to start calculation with a reasonable ```NELECT``` for your target potential. It can be estimated by doing a series of SCF calculations with different ```NELECT``` or it can be optimized as shown in examples for ```Charging electrode to reach a target potential``` below. 
 
+```NELECT``` should always be included in ```INCAR```. At the end of each iteration, ```UPDATED NELECT``` is printed out in ```OUTCAR```. For restarting a calculation, this value should be used for ```NELECT```.
+
+
 ## Details of each keyword
 
 ### LTPOT
@@ -130,7 +133,7 @@ Calculate grand canonical energy by adding ```q*EFERMI``` (i.e., Grand Canonical
 
 LOGICAL, DEFAULT: .TRUE.
 
-Calculate grand canonical energy only at the end of ionic iteration
+Calculate grand canonical energy only at the end of each ionic iteration.
 
 # TPOTCAR for Nudged Elastic Band (NEB) calculations
 
@@ -218,4 +221,6 @@ TPOTVRATE        = -1.6
 TPOTVRATELIM     = 0.05
 TPOTGCENERGY     = .TRUE.
 TPOTGCIONIC      = .TRUE.
+NELECT           = Starting number of electron
 ```
+
