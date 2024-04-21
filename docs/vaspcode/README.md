@@ -2,7 +2,7 @@
 
 Since we can not provide a batch for VASP (according to its licence agreement), we provide a list of changes that we need to make to ```electron.F```, ```pot.F```, ```main.F```, and ```.objects``` files.
 
-These instruction below are exlicitly for vasp 5.4.4. For other version, users need to make appropriate corretions (expected to be similar). 
+These instruction below are exlicitly for vasp 5.4.4. For other version, users need to make appropriate corretions (expected to be similar). This [pbz_patch_610](https://github.com/zoowe/VASPsol/blob/master/src/patches/pbz_patch_610) patch needs to be applied as well for vasp 6.1.0 or newer.
 
 :one: electron.F
 
@@ -39,12 +39,21 @@ Compare the followng blocks of the codes with those in ```electron.F``` to make 
 !=======================================================================
 ! calculate free-energy and bandstructur-energy
 ```
-
+For vasp 5.4.4
 ```Fortran
       E%EBANDSTR=BANDSTRUCTURE_ENERGY(WDES, W)
 !------ Begin tpot
       TOTEN=E%EBANDSTR+E%DENC+E%XCENC+E%TEWEN+E%PSCENC+E%EENTROPY+E%PAWPS+E%PAWAE+INFO%EALLAT+E%EXHF+ECORE()+&
             & Ediel_sol + GC_COOR
+!------ End tpot
+!-MM- Added to accomodate constrained moment calculations
+```
+For vasp 6 
+```Fortran
+      E%EBANDSTR=BANDSTRUCTURE_ENERGY(WDES, W)
+!------ Begin tpot
+      TOTEN=E%EBANDSTR+E%DENC+E%XCENC+E%TEWEN+E%PSCENC+E%EENTROPY+E%PAWPS &
+           +E%PAWAE+INFO%EALLAT+E%EXHF+ECORE()+Ediel_sol+E%ESCPC + GC_COOR
 !------ End tpot
 !-MM- Added to accomodate constrained moment calculations
 ```
@@ -166,6 +175,14 @@ Compare the followng blocks of the code with those in ```main.F``` to make nesse
 !------ End tpot
 ! solvation__
       USE locproj
+```
+
+```
+#endif
+!------ Begin tpot
+      REAL(q) :: GC_COOR  ! correction for Grand canonical DFT
+!------ End tpot
+#ifdef PROFILING
 ```
 
 ```Fortran

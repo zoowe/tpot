@@ -6,7 +6,7 @@
 
 :one: Make nessesary changes to source of VASP code
 
-Follow the instruction for [vasp 5.4.4](docs/vaspcode)
+Follow the instruction for making change in [vasp](docs/vaspcode) code.
 
 :two: Update VASPSol
 
