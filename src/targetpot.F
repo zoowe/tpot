@@ -30,7 +30,7 @@ MODULE targetpot
  REAL(q) :: VACLEVEL        = 0        ! Last Vacuum level
  REAL(q) :: DFERMI_SHIFTLIM = 0.5      ! Limit for change in FERMI_SHIFT
  REAL(q) :: DNELECTLIM      = 1.d-4    ! Limit for amount of electron changed for updating VRATE
- LOGICAL :: GCENERGY        = .TRUE.   ! GC correction -(NELECT - ZVALS)*EFERMI  included in TOTEN
+ LOGICAL :: GCENERGY        = .FALSE.   ! GC correction -(NELECT - ZVALS)*EFERMI  included in TOTEN
  LOGICAL :: GCIONIC         = .TRUE.   ! GC correction to the end of each ionic step IBRION = 0
  REAL(q) :: ZVALS           = 0.0      ! Total number of valence electron for neutral case
  INTEGER :: ITER            = 0        ! Iteration
@@ -79,6 +79,7 @@ MODULE targetpot
                 IDUM,RDUM,CDUM,TPOT%LTPOT,CHARAC,N,1,IERR)
           IF ((IERR/=0).OR.(N<1)) TPOT%LTPOT=.FALSE.
           IF ( TPOT%LTPOT ) THEN
+               TPOT%GCENERGY = .FALSE.
 
                CALL RDATAB(LOPEN,'INCAR',IO%IU5,'TPOTMETHOD','=','#',';','I', &
                 TPOT%METHOD,RDUM,CDUM,LDUM,CHARAC,N,1,IERR)
